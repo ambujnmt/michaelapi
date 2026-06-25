@@ -1,9 +1,13 @@
 const db = require('../config/db')
+const { notifyAdmin } = require('./mailHelper')
 
 // GET all inquiries
 exports.getAllInquiries = (req, res) => {
   db.query(
-    'SELECT * FROM inquiries ORDER BY created_at DESC',
+    `SELECT i.*, p.title AS property_title
+     FROM inquiries i
+     LEFT JOIN properties p ON i.property_id = p.id
+     ORDER BY i.created_at DESC`,
     (err, results) => {
       if (err) return res.status(500).json({ success: false, message: 'Server Error' })
       res.json({ success: true, data: results })
@@ -33,14 +37,24 @@ exports.createInquiry = (req, res) => {
     return res.status(400).json({ success: false, message: 'Name, email and message are required' })
   }
 
-  db.query(
-    'INSERT INTO inquiries (name, email, phone, message, property_id, status) VALUES (?, ?, ?, ?, ?, ?)',
-    [name, email, phone, message, property_id || null, 'New'],
-    (err, result) => {
-      if (err) return res.status(500).json({ success: false, message: 'Server Error' })
-      res.status(201).json({ success: true, message: 'Inquiry submitted successfully', id: result.insertId })
-    }
-  )
+  const fetchTitle = (pid, cb) => {
+    if (!pid) return cb(null)
+    db.query('SELECT title FROM properties WHERE id = ?', [pid], (err, rows) => {
+      cb(rows?.[0]?.title || null)
+    })
+  }
+
+  fetchTitle(property_id, (propertyTitle) => {
+    db.query(
+      'INSERT INTO inquiries (name, email, phone, message, property_id, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, phone, message, property_id || null, 'New'],
+      (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Server Error' })
+        notifyAdmin({ type: 'inquiry', name, email, phone, message, propertyTitle })
+        res.status(201).json({ success: true, message: 'Inquiry submitted successfully', id: result.insertId })
+      }
+    )
+  })
 }
 
 // PUT update inquiry status

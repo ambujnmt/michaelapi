@@ -34,7 +34,7 @@ function resolveSlug(title, id, excludeId, cb) {
 // GET all properties
 exports.getAllProperties = (req, res) => {
   db.query(
-    'SELECT * FROM properties ORDER BY created_at DESC',
+    'SELECT *, show_in_sales + 0 AS show_in_sales FROM properties ORDER BY created_at DESC',
     (err, results) => {
       if (err) return res.status(500).json({ success: false, message: 'Server Error' })
       res.json({ success: true, data: results })
@@ -47,8 +47,8 @@ exports.getPropertyById = (req, res) => {
   const { id } = req.params
   const isNumeric = /^\d+$/.test(id)
   const query = isNumeric
-    ? 'SELECT * FROM properties WHERE id = ?'
-    : 'SELECT * FROM properties WHERE slug = ?'
+    ? 'SELECT *, show_in_sales + 0 AS show_in_sales FROM properties WHERE id = ?'
+    : 'SELECT *, show_in_sales + 0 AS show_in_sales FROM properties WHERE slug = ?'
   db.query(query, [id], (err, results) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
     if (results.length === 0) return res.status(404).json({ success: false, message: 'Property not found' })
@@ -58,15 +58,15 @@ exports.getPropertyById = (req, res) => {
 
 // POST create property
 exports.createProperty = (req, res) => {
-  const { title, location, price, size, rooms, bedrooms, bathrooms, status, description } = req.body
+  const { title, location, price, size, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales } = req.body
 
   if (!title || !location || !price) {
     return res.status(400).json({ success: false, message: 'Title, location and price are required' })
   }
 
   db.query(
-    'INSERT INTO properties (title, location, price, size, rooms, bedrooms, bathrooms, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [title, location, price, size || 0, rooms || 0, bedrooms || 0, bathrooms || 0, status || 'Active', description],
+    'INSERT INTO properties (title, location, price, size, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [title, location, price, size || 0, rooms || 0, bedrooms || 0, bathrooms || 0, status || 'Active', property_type || 'villa', description, show_in_sales ? 1 : 0],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: 'Server Error' })
       const id = result.insertId
@@ -84,13 +84,13 @@ exports.createProperty = (req, res) => {
 // PUT update property
 exports.updateProperty = (req, res) => {
   const { id } = req.params
-  const { title, location, price, size, rooms, bedrooms, bathrooms, status, description } = req.body
+  const { title, location, price, size, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales } = req.body
 
   resolveSlug(title, id, id, (err, slug) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
     db.query(
-      'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, rooms=?, bedrooms=?, bathrooms=?, status=?, description=? WHERE id=?',
-      [title, slug, location, price, size || 0, rooms || 0, bedrooms || 0, bathrooms || 0, status, description, id],
+      'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, rooms=?, bedrooms=?, bathrooms=?, status=?, property_type=?, description=?, show_in_sales=? WHERE id=?',
+      [title, slug, location, price, size || 0, rooms || 0, bedrooms || 0, bathrooms || 0, status, property_type || 'villa', description, show_in_sales ? 1 : 0, id],
       (err2, result) => {
         if (err2) return res.status(500).json({ success: false, message: 'Server Error' })
         if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Property not found' })

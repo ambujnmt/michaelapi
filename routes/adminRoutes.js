@@ -24,11 +24,15 @@ const {
 const {
   getAllBlogs, getBlogById, createBlog, updateBlog, deleteBlog
 } = require('../controllers/blogController')
+const {
+  getAllTeam, createTeamMember, updateTeamMember, deleteTeamMember
+} = require('../controllers/teamController')
 const createUpload = require('../middleware/upload')
 const uploadProperties   = createUpload('properties')
 const uploadSliders      = createUpload('sliders')
 const uploadTestimonials = createUpload('testimonials')
 const uploadBlogs        = createUpload('blogs')
+const uploadTeam         = createUpload('team')
 const db = require('../config/db')
 
 // --- Auth (public) ---
@@ -98,6 +102,12 @@ router.get('/blogs/:id', getBlogById)
 router.post('/blogs', uploadBlogs.single('image'), createBlog)
 router.put('/blogs/:id', uploadBlogs.single('image'), updateBlog)
 router.delete('/blogs/:id', deleteBlog)
+
+// --- Team ---
+router.get('/team', getAllTeam)
+router.post('/team', uploadTeam.single('image'), createTeamMember)
+router.put('/team/:id', uploadTeam.single('image'), updateTeamMember)
+router.delete('/team/:id', deleteTeamMember)
 
 // --- Subscribers ---
 router.get('/subscribers', getAllSubscribers)

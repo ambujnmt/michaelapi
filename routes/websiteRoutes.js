@@ -10,6 +10,7 @@ const { createInquiry } = require('../controllers/inquiryController')
 const { createContact } = require('../controllers/contactController')
 const { subscribe } = require('../controllers/subscriberController')
 const { getAllSliders } = require('../controllers/sliderController')
+const { getAllTeam } = require('../controllers/teamController')
 const { getAllTestimonials } = require('../controllers/testimonialController')
 const { getAllBlogs } = require('../controllers/blogController')
 const db = require('../config/db')
@@ -71,6 +72,14 @@ router.get('/site-info', (req, res) => {
       if (!rows.length) return res.json({ success: true, data: { site_name: '', email: '', phone: '', address: '', opening_hours: '' } })
       res.json({ success: true, data: rows[0] })
     })
+  })
+})
+
+// --- Team (public, active only) ---
+router.get('/team', (req, res) => {
+  db.query('SELECT * FROM team_members WHERE status = ? ORDER BY sort_order ASC, id ASC', ['Active'], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: err.message })
+    res.json({ success: true, data: results })
   })
 })
 

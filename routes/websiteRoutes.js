@@ -8,6 +8,7 @@ const {
 } = require('../controllers/propertyController')
 const { createInquiry } = require('../controllers/inquiryController')
 const { createContact } = require('../controllers/contactController')
+const { createSuchagent } = require('../controllers/suchagentController')
 const { subscribe } = require('../controllers/subscriberController')
 const { getAllSliders } = require('../controllers/sliderController')
 const { getAllTeam } = require('../controllers/teamController')
@@ -29,6 +30,7 @@ router.get('/properties/:id', getPropertyById)
 // --- Contact / Inquiry form ---
 router.post('/inquiry', createInquiry)
 router.post('/contact', createContact)
+router.post('/suchagent', createSuchagent)
 
 // --- Newsletter ---
 router.post('/subscribe', subscribe)
@@ -67,9 +69,9 @@ router.get('/site-info', (req, res) => {
       phone VARCHAR(100) DEFAULT '',
       address TEXT DEFAULT ''
     )`, () => {
-    db.query('SELECT site_name, email, phone, address, opening_hours FROM site_settings WHERE id = 1', (err, rows) => {
+    db.query('SELECT site_name, email, phone, address, opening_hours, newsletter_bg, facebook, instagram, linkedin, youtube, twitter FROM site_settings WHERE id = 1', (err, rows) => {
       if (err) return res.status(500).json({ success: false, message: err.message })
-      if (!rows.length) return res.json({ success: true, data: { site_name: '', email: '', phone: '', address: '', opening_hours: '' } })
+      if (!rows.length) return res.json({ success: true, data: { site_name: '', email: '', phone: '', address: '', opening_hours: '', newsletter_bg: '', facebook: '', instagram: '', linkedin: '', youtube: '', twitter: '' } })
       res.json({ success: true, data: rows[0] })
     })
   })

@@ -27,12 +27,16 @@ const {
 const {
   getAllTeam, createTeamMember, updateTeamMember, deleteTeamMember
 } = require('../controllers/teamController')
+const {
+  getAllSuchagents, updateSuchagentStatus, deleteSuchagent
+} = require('../controllers/suchagentController')
 const createUpload = require('../middleware/upload')
 const uploadProperties   = createUpload('properties')
 const uploadSliders      = createUpload('sliders')
 const uploadTestimonials = createUpload('testimonials')
 const uploadBlogs        = createUpload('blogs')
 const uploadTeam         = createUpload('team')
+const uploadSettings     = createUpload('settings')
 const db = require('../config/db')
 
 // --- Auth (public) ---
@@ -109,6 +113,11 @@ router.post('/team', uploadTeam.single('image'), createTeamMember)
 router.put('/team/:id', uploadTeam.single('image'), updateTeamMember)
 router.delete('/team/:id', deleteTeamMember)
 
+// --- Suchagents ---
+router.get('/suchagents', getAllSuchagents)
+router.put('/suchagents/:id/status', updateSuchagentStatus)
+router.delete('/suchagents/:id', deleteSuchagent)
+
 // --- Subscribers ---
 router.get('/subscribers', getAllSubscribers)
 router.delete('/subscribers/:id', deleteSubscriber)
@@ -121,7 +130,7 @@ router.put('/settings/password', updatePassword)
 router.get('/settings/site', (req, res) => {
   db.query('SELECT * FROM site_settings WHERE id = 1', (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: err.message })
-    if (!rows.length) return res.json({ success: true, data: { site_name: '', email: '', phone: '', address: '', opening_hours: '' } })
+    if (!rows.length) return res.json({ success: true, data: { site_name: '', email: '', phone: '', address: '', opening_hours: '', newsletter_bg: '' } })
     res.json({ success: true, data: rows[0] })
   })
 })
@@ -136,6 +145,41 @@ router.put('/settings/site', (req, res) => {
     (err) => {
       if (err) return res.status(500).json({ success: false, message: err.message })
       res.json({ success: true, message: 'Site info updated successfully' })
+    }
+  )
+})
+
+// --- Newsletter Background Image ---
+router.put('/settings/newsletter-bg', uploadSettings.single('newsletter_bg'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image uploaded' })
+  }
+
+  const imagePath = `/uploads/settings/${req.file.filename}`
+
+  db.query(
+    `INSERT INTO site_settings (id, newsletter_bg)
+     VALUES (1, ?)
+     ON DUPLICATE KEY UPDATE newsletter_bg = VALUES(newsletter_bg)`,
+    [imagePath],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: err.message })
+      res.json({ success: true, message: 'Newsletter background updated successfully', data: { newsletter_bg: imagePath } })
+    }
+  )
+})
+
+// --- Social Media Links ---
+router.put('/settings/social', (req, res) => {
+  const { facebook, instagram, linkedin, youtube, twitter } = req.body
+  db.query(
+    `INSERT INTO site_settings (id, facebook, instagram, linkedin, youtube, twitter)
+     VALUES (1, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE facebook = VALUES(facebook), instagram = VALUES(instagram), linkedin = VALUES(linkedin), youtube = VALUES(youtube), twitter = VALUES(twitter)`,
+    [facebook, instagram, linkedin, youtube, twitter],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: err.message })
+      res.json({ success: true, message: 'Social links updated successfully' })
     }
   )
 })

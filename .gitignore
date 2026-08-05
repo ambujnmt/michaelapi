@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Uploaded files (optional - remove if you want to track uploads)
+uploads/
+
+# Logs
+*.log
+npm-debug.log*

@@ -14,6 +14,10 @@ const { getAllSliders } = require('../controllers/sliderController')
 const { getAllTeam } = require('../controllers/teamController')
 const { getAllTestimonials } = require('../controllers/testimonialController')
 const { getAllBlogs } = require('../controllers/blogController')
+const { getPublicAbout } = require('../controllers/aboutController')
+const { getPublicKontaktPage } = require('../controllers/kontaktPageController')
+const { getPublicPrivacyPage } = require('../controllers/privacyController')
+const { getPublicImpressumPage } = require('../controllers/impressumController')
 const db = require('../config/db')
 
 // --- Properties (public listing) ---
@@ -76,6 +80,18 @@ router.get('/site-info', (req, res) => {
     })
   })
 })
+
+// --- About / Company Info (public) ---
+router.get('/about', getPublicAbout)
+
+// --- Kontakt Page (office section, public) ---
+router.get('/kontakt-page', getPublicKontaktPage)
+
+// --- Privacy Page (Datenschutz, public) ---
+router.get('/privacy-page', getPublicPrivacyPage)
+
+// --- Impressum Page (public) ---
+router.get('/impressum-page', getPublicImpressumPage)
 
 // --- Team (public, active only) ---
 router.get('/team', (req, res) => {

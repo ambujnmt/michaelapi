@@ -34,6 +34,15 @@ connection.connect((err) => {
     connection.query(`ALTER TABLE properties ADD COLUMN show_in_sales TINYINT(1) NOT NULL DEFAULT 0`, (err) => {
       if (err && err.errno !== 1060) console.log('show_in_sales column error:', err.message)
     })
+    connection.query(`ALTER TABLE properties ADD COLUMN location_details LONGTEXT`, (err) => {
+      if (err && err.errno !== 1060) console.log('location_details column error:', err.message)
+    })
+    connection.query(`ALTER TABLE properties ADD COLUMN features LONGTEXT`, (err) => {
+      if (err && err.errno !== 1060) console.log('features column error:', err.message)
+    })
+    connection.query(`ALTER TABLE properties ADD COLUMN information LONGTEXT`, (err) => {
+      if (err && err.errno !== 1060) console.log('information column error:', err.message)
+    })
   }
 })
 

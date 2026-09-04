@@ -30,6 +30,10 @@ const {
 const {
   getAllSuchagents, updateSuchagentStatus, deleteSuchagent
 } = require('../controllers/suchagentController')
+const { getAbout, updateAbout } = require('../controllers/aboutController')
+const { getKontaktPage, updateKontaktPage } = require('../controllers/kontaktPageController')
+const { getPrivacyPage, updatePrivacyPage } = require('../controllers/privacyController')
+const { getImpressumPage, updateImpressumPage } = require('../controllers/impressumController')
 const createUpload = require('../middleware/upload')
 const uploadProperties   = createUpload('properties')
 const uploadSliders      = createUpload('sliders')
@@ -37,6 +41,8 @@ const uploadTestimonials = createUpload('testimonials')
 const uploadBlogs        = createUpload('blogs')
 const uploadTeam         = createUpload('team')
 const uploadSettings     = createUpload('settings')
+const uploadAbout        = createUpload('about')
+const uploadKontaktPage  = createUpload('kontakt')
 const db = require('../config/db')
 
 // --- Auth (public) ---
@@ -106,6 +112,22 @@ router.get('/blogs/:id', getBlogById)
 router.post('/blogs', uploadBlogs.single('image'), createBlog)
 router.put('/blogs/:id', uploadBlogs.single('image'), updateBlog)
 router.delete('/blogs/:id', deleteBlog)
+
+// --- About / Company Info ---
+router.get('/about', getAbout)
+router.put('/about', uploadAbout.single('image'), updateAbout)
+
+// --- Kontakt Page (office section) ---
+router.get('/kontakt-page', getKontaktPage)
+router.put('/kontakt-page', uploadKontaktPage.single('image'), updateKontaktPage)
+
+// --- Privacy Page (Datenschutz) ---
+router.get('/privacy-page', getPrivacyPage)
+router.put('/privacy-page', updatePrivacyPage)
+
+// --- Impressum Page ---
+router.get('/impressum-page', getImpressumPage)
+router.put('/impressum-page', updateImpressumPage)
 
 // --- Team ---
 router.get('/team', getAllTeam)

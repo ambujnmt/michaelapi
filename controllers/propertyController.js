@@ -61,6 +61,7 @@ exports.createProperty = (req, res) => {
   const {
     title, location, price, size, plot_size, outdoor_area,
     rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales,
+    location_details, features, information,
   } = req.body
 
   if (!title || !location || !price) {
@@ -69,6 +70,7 @@ exports.createProperty = (req, res) => {
 
   db.query(
     'INSERT INTO properties (title, location, price, size, plot_size, outdoor_area, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO properties (title, location, price, size, plot_size, outdoor_area, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales, location_details, features, information) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       title, location, price,
       size || 0,
@@ -77,6 +79,7 @@ exports.createProperty = (req, res) => {
       rooms || 0, bedrooms || 0, bathrooms || 0,
       status || 'Active', property_type || 'villa', description,
       show_in_sales ? 1 : 0,
+      location_details || null, features || null, information || null,
     ],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: 'Server Error' })
@@ -98,12 +101,15 @@ exports.updateProperty = (req, res) => {
   const {
     title, location, price, size, plot_size, outdoor_area,
     rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales,
+    location_details, features, information,
   } = req.body
 
   resolveSlug(title, id, id, (err, slug) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
     db.query(
       'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, plot_size=?, outdoor_area=?, rooms=?, bedrooms=?, bathrooms=?, status=?, property_type=?, description=?, show_in_sales=? WHERE id=?',
+      'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, plot_size=?, outdoor_area=?, rooms=?, bedrooms=?, bathrooms=?, status=?, property_type=?, description=?, show_in_sales=?, location_details=?, features=?, information=? WHERE id=?',
+
       [
         title, slug, location, price,
         size || 0,
@@ -112,6 +118,9 @@ exports.updateProperty = (req, res) => {
         rooms || 0, bedrooms || 0, bathrooms || 0,
         status, property_type || 'villa', description,
         show_in_sales ? 1 : 0, id,
+        show_in_sales ? 1 : 0,
+        location_details || null, features || null, information || null,
+        id,
       ],
       (err2, result) => {
         if (err2) return res.status(500).json({ success: false, message: 'Server Error' })

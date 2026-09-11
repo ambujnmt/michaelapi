@@ -5,6 +5,7 @@ const {
   getAllProperties,
   getPropertyById,
   getGalleryImages,
+  getApartmentImages,
 } = require('../controllers/propertyController')
 const { createInquiry } = require('../controllers/inquiryController')
 const { createContact } = require('../controllers/contactController')
@@ -14,6 +15,13 @@ const { getAllSliders } = require('../controllers/sliderController')
 const { getAllTeam } = require('../controllers/teamController')
 const { getAllTestimonials } = require('../controllers/testimonialController')
 const { getAllBlogs } = require('../controllers/blogController')
+const { getPublicAbout } = require('../controllers/aboutController')
+const { getPublicHomeIntro } = require('../controllers/homeIntroController')
+const { getPublicVideoBanner } = require('../controllers/videoBannerController')
+const { getPublicVerkaufPage } = require('../controllers/verkaufController')
+const { getPublicKontaktPage } = require('../controllers/kontaktPageController')
+const { getPublicPrivacyPage } = require('../controllers/privacyController')
+const { getPublicImpressumPage } = require('../controllers/impressumController')
 const db = require('../config/db')
 
 // --- Properties (public listing) ---
@@ -25,6 +33,7 @@ router.get('/properties/sales', (req, res) => {
   })
 })
 router.get('/properties/:id/images', getGalleryImages)
+router.get('/properties/:id/apartment-images', getApartmentImages)
 router.get('/properties/:id', getPropertyById)
 
 // --- Contact / Inquiry form ---
@@ -76,6 +85,27 @@ router.get('/site-info', (req, res) => {
     })
   })
 })
+
+// --- About / Company Info (public) ---
+router.get('/about', getPublicAbout)
+
+// --- Home Intro (Michael Leber Immobilien section on the homepage, public) ---
+router.get('/home-intro', getPublicHomeIntro)
+
+// --- Video Banner (homepage video section, public) ---
+router.get('/video-banner', getPublicVideoBanner)
+
+// --- Verkauf Page (text + photo, public) ---
+router.get('/verkauf-page', getPublicVerkaufPage)
+
+// --- Kontakt Page (office section, public) ---
+router.get('/kontakt-page', getPublicKontaktPage)
+
+// --- Privacy Page (Datenschutz, public) ---
+router.get('/privacy-page', getPublicPrivacyPage)
+
+// --- Impressum Page (public) ---
+router.get('/impressum-page', getPublicImpressumPage)
 
 // --- Team (public, active only) ---
 router.get('/team', (req, res) => {

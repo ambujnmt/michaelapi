@@ -5,7 +5,8 @@ const auth = require('../middleware/authMiddleware')
 const { login, updateProfile, updatePassword } = require('../controllers/authController')
 const {
   getAllProperties, getPropertyById, createProperty, updateProperty, deleteProperty,
-  uploadBanner, getGalleryImages, uploadGalleryImages, deleteGalleryImage
+  uploadBanner, getGalleryImages, uploadGalleryImages, deleteGalleryImage,
+  getApartmentImages, uploadApartmentImages, deleteApartmentImage
 } = require('../controllers/propertyController')
 const {
   getAllInquiries, getInquiryById, updateInquiryStatus, deleteInquiry
@@ -31,10 +32,14 @@ const {
   getAllSuchagents, updateSuchagentStatus, deleteSuchagent
 } = require('../controllers/suchagentController')
 const { getAbout, updateAbout } = require('../controllers/aboutController')
+const { getHomeIntro, updateHomeIntro } = require('../controllers/homeIntroController')
+const { getVideoBanner, updateVideoBanner } = require('../controllers/videoBannerController')
+const { getVerkaufPage, updateVerkaufPage } = require('../controllers/verkaufController')
 const { getKontaktPage, updateKontaktPage } = require('../controllers/kontaktPageController')
 const { getPrivacyPage, updatePrivacyPage } = require('../controllers/privacyController')
 const { getImpressumPage, updateImpressumPage } = require('../controllers/impressumController')
 const createUpload = require('../middleware/upload')
+const { createVideoUpload } = require('../middleware/upload')
 const uploadProperties   = createUpload('properties')
 const uploadSliders      = createUpload('sliders')
 const uploadTestimonials = createUpload('testimonials')
@@ -42,7 +47,9 @@ const uploadBlogs        = createUpload('blogs')
 const uploadTeam         = createUpload('team')
 const uploadSettings     = createUpload('settings')
 const uploadAbout        = createUpload('about')
+const uploadVerkauf      = createUpload('verkauf')
 const uploadKontaktPage  = createUpload('kontakt')
+const uploadVideoBanner  = createVideoUpload('video-banner')
 const db = require('../config/db')
 
 // --- Auth (public) ---
@@ -80,6 +87,11 @@ router.get('/properties/:id/images', getGalleryImages)
 router.post('/properties/:id/images', uploadProperties.array('images', 10), uploadGalleryImages)
 router.delete('/properties/images/:imageId', deleteGalleryImage)
 
+// --- Apartment Images (apartments only, multiple) ---
+router.get('/properties/:id/apartment-images', getApartmentImages)
+router.post('/properties/:id/apartment-images', uploadProperties.array('apartment_images', 15), uploadApartmentImages)
+router.delete('/properties/apartment-images/:imageId', deleteApartmentImage)
+
 // --- Inquiries ---
 router.get('/inquiries', getAllInquiries)
 router.get('/inquiries/:id', getInquiryById)
@@ -116,6 +128,18 @@ router.delete('/blogs/:id', deleteBlog)
 // --- About / Company Info ---
 router.get('/about', getAbout)
 router.put('/about', uploadAbout.single('image'), updateAbout)
+
+// --- Home Intro (Michael Leber Immobilien section on the homepage) ---
+router.get('/home-intro', getHomeIntro)
+router.put('/home-intro', updateHomeIntro)
+
+// --- Video Banner (homepage video section) ---
+router.get('/video-banner', getVideoBanner)
+router.put('/video-banner', uploadVideoBanner.fields([{ name: 'video', maxCount: 1 }, { name: 'hero_video', maxCount: 1 }]), updateVideoBanner)
+
+// --- Verkauf Page (text + photo) ---
+router.get('/verkauf-page', getVerkaufPage)
+router.put('/verkauf-page', uploadVerkauf.single('image'), updateVerkaufPage)
 
 // --- Kontakt Page (office section) ---
 router.get('/kontakt-page', getKontaktPage)

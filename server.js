@@ -5,6 +5,15 @@ require('dotenv').config()
 
 const app = express()
 
+// Keep the API process alive if a stray async error escapes (e.g. a fatal
+// DB socket error from mysql2). Log it loudly instead of letting Node exit.
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('unhandledRejection:', reason)
+})
+
 // Middleware
 app.use(cors())
 app.use(express.json())

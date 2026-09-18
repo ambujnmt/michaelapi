@@ -81,6 +81,7 @@ pool.query('SELECT 1', (err) => {
   })
 
   ensureColumn('properties', 'show_in_sales', `show_in_sales TINYINT(1) NOT NULL DEFAULT 0`)
+  ensureColumn('properties', 'show_on_homepage', `show_on_homepage TINYINT(1) NOT NULL DEFAULT 0`)
   ensureColumn('properties', 'location_details', `location_details LONGTEXT`)
   ensureColumn('properties', 'features', `features LONGTEXT`)
   ensureColumn('properties', 'information', `information LONGTEXT`)

@@ -32,6 +32,13 @@ router.get('/properties/sales', (req, res) => {
     res.json({ success: true, data: results })
   })
 })
+// Admin picks which properties appear in the homepage's 3-property showcase.
+router.get('/properties/homepage', (req, res) => {
+  db.query('SELECT *, show_on_homepage + 0 AS show_on_homepage FROM properties WHERE show_on_homepage = 1 ORDER BY created_at DESC', (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server Error' })
+    res.json({ success: true, data: results })
+  })
+})
 router.get('/properties/:id/images', getGalleryImages)
 router.get('/properties/:id/apartment-images', getApartmentImages)
 router.get('/properties/:id', getPropertyById)

@@ -33,8 +33,9 @@ router.get('/properties/sales', (req, res) => {
   })
 })
 // Admin picks which properties appear in the homepage's 3-property showcase.
+// Sorted by the admin-set homepage_order (1 first); unordered (0) ones go last, newest-first.
 router.get('/properties/homepage', (req, res) => {
-  db.query('SELECT *, show_on_homepage + 0 AS show_on_homepage FROM properties WHERE show_on_homepage = 1 ORDER BY created_at DESC', (err, results) => {
+  db.query('SELECT *, show_on_homepage + 0 AS show_on_homepage FROM properties WHERE show_on_homepage = 1 ORDER BY homepage_order = 0, homepage_order ASC, created_at DESC', (err, results) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
     res.json({ success: true, data: results })
   })

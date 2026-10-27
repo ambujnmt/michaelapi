@@ -31,10 +31,32 @@ function resolveSlug(title, id, excludeId, cb) {
   )
 }
 
+// The homepage showcase holds at most this many properties.
+const HOMEPAGE_LIMIT = 3
+
+// Calls cb(err, ok) — ok=false when turning show_on_homepage on would exceed
+// HOMEPAGE_LIMIT. excludeId is the property being saved (0 for a new one).
+// A property that is already on stays allowed, so it can still be edited.
+function checkHomepageLimit(enable, excludeId, cb) {
+  if (!enable) return cb(null, true)
+  db.query(
+    `SELECT
+       (SELECT COUNT(*) FROM properties WHERE show_on_homepage = 1 AND id != ?) AS total,
+       (SELECT show_on_homepage + 0 FROM properties WHERE id = ?) AS current`,
+    [excludeId, excludeId],
+    (err, rows) => {
+      if (err) return cb(err)
+      cb(null, rows[0].current == 1 || rows[0].total < HOMEPAGE_LIMIT)
+    }
+  )
+}
+
+const homepageLimitMessage = `Only ${HOMEPAGE_LIMIT} properties can be shown on the homepage. Turn one off first.`
+
 // GET all properties
 exports.getAllProperties = (req, res) => {
   db.query(
-    'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage FROM properties ORDER BY created_at DESC',
+    'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage, show_in_premium + 0 AS show_in_premium FROM properties ORDER BY created_at DESC',
     (err, results) => {
       if (err) return res.status(500).json({ success: false, message: 'Server Error' })
       res.json({ success: true, data: results })
@@ -47,8 +69,8 @@ exports.getPropertyById = (req, res) => {
   const { id } = req.params
   const isNumeric = /^\d+$/.test(id)
   const query = isNumeric
-    ? 'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage FROM properties WHERE id = ?'
-    : 'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage FROM properties WHERE slug = ?'
+    ? 'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage, show_in_premium + 0 AS show_in_premium FROM properties WHERE id = ?'
+    : 'SELECT *, show_in_sales + 0 AS show_in_sales, show_on_homepage + 0 AS show_on_homepage, show_in_premium + 0 AS show_in_premium FROM properties WHERE slug = ?'
   db.query(query, [id], (err, results) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
     if (results.length === 0) return res.status(404).json({ success: false, message: 'Property not found' })
@@ -61,7 +83,7 @@ exports.createProperty = (req, res) => {
   const {
     title, location, price, size, plot_size, outdoor_area,
     rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales,
-    show_on_homepage,
+    show_on_homepage, show_in_premium,
     location_details, features, information,
     title_en, location_en, description_en,
     location_details_en, features_en, information_en,
@@ -72,34 +94,40 @@ exports.createProperty = (req, res) => {
     return res.status(400).json({ success: false, message: 'Title, location and price are required' })
   }
 
-  db.query(
-    'INSERT INTO properties (title, location, price, size, plot_size, outdoor_area, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales, show_on_homepage, location_details, features, information, title_en, location_en, description_en, location_details_en, features_en, information_en, floor, commission, extras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [
-      title, location, price,
-      size || 0,
-      plot_size || null,
-      outdoor_area || null,
-      rooms || 0, bedrooms || 0, bathrooms || 0,
-      status || 'Active', property_type || 'villa', description,
-      show_in_sales ? 1 : 0,
-      show_on_homepage ? 1 : 0,
-      location_details || null, features || null, information || null,
-      title_en || null, location_en || null, description_en || null,
-      location_details_en || null, features_en || null, information_en || null,
-      floor || null, commission || null, extras || null,
-    ],
-    (err, result) => {
-      if (err) return res.status(500).json({ success: false, message: 'Server Error' })
-      const id = result.insertId
-      resolveSlug(title, id, id, (err2, slug) => {
-        if (err2) return res.status(500).json({ success: false, message: 'Server Error' })
-        db.query('UPDATE properties SET slug = ? WHERE id = ?', [slug, id], (err3) => {
-          if (err3) return res.status(500).json({ success: false, message: 'Server Error' })
-          res.status(201).json({ success: true, message: 'Property created', id, slug })
+  checkHomepageLimit(show_on_homepage, 0, (limitErr, ok) => {
+    if (limitErr) return res.status(500).json({ success: false, message: 'Server Error' })
+    if (!ok) return res.status(400).json({ success: false, message: homepageLimitMessage })
+
+    db.query(
+      'INSERT INTO properties (title, location, price, size, plot_size, outdoor_area, rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales, show_on_homepage, show_in_premium, location_details, features, information, title_en, location_en, description_en, location_details_en, features_en, information_en, floor, commission, extras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        title, location, price,
+        size || 0,
+        plot_size || null,
+        outdoor_area || null,
+        rooms || 0, bedrooms || 0, bathrooms || 0,
+        status || 'Active', property_type || 'villa', description,
+        show_in_sales ? 1 : 0,
+        show_on_homepage ? 1 : 0,
+        show_in_premium ? 1 : 0,
+        location_details || null, features || null, information || null,
+        title_en || null, location_en || null, description_en || null,
+        location_details_en || null, features_en || null, information_en || null,
+        floor || null, commission || null, extras || null,
+      ],
+      (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Server Error' })
+        const id = result.insertId
+        resolveSlug(title, id, id, (err2, slug) => {
+          if (err2) return res.status(500).json({ success: false, message: 'Server Error' })
+          db.query('UPDATE properties SET slug = ? WHERE id = ?', [slug, id], (err3) => {
+            if (err3) return res.status(500).json({ success: false, message: 'Server Error' })
+            res.status(201).json({ success: true, message: 'Property created', id, slug })
+          })
         })
-      })
-    }
-  )
+      }
+    )
+  })
 }
 
 // PUT update property
@@ -108,38 +136,69 @@ exports.updateProperty = (req, res) => {
   const {
     title, location, price, size, plot_size, outdoor_area,
     rooms, bedrooms, bathrooms, status, property_type, description, show_in_sales,
-    show_on_homepage,
+    show_on_homepage, show_in_premium,
     location_details, features, information,
     title_en, location_en, description_en,
     location_details_en, features_en, information_en,
     floor, commission, extras,
   } = req.body
 
-  resolveSlug(title, id, id, (err, slug) => {
+  checkHomepageLimit(show_on_homepage, id, (limitErr, ok) => {
+    if (limitErr) return res.status(500).json({ success: false, message: 'Server Error' })
+    if (!ok) return res.status(400).json({ success: false, message: homepageLimitMessage })
+
+    resolveSlug(title, id, id, (err, slug) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server Error' })
+      db.query(
+        'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, plot_size=?, outdoor_area=?, rooms=?, bedrooms=?, bathrooms=?, status=?, property_type=?, description=?, show_in_sales=?, show_on_homepage=?, show_in_premium=COALESCE(?, show_in_premium), location_details=?, features=?, information=?, title_en=?, location_en=?, description_en=?, location_details_en=?, features_en=?, information_en=?, floor=?, commission=?, extras=? WHERE id=?',
+        [
+          title, slug, location, price,
+          size || 0,
+          plot_size || null,
+          outdoor_area || null,
+          rooms || 0, bedrooms || 0, bathrooms || 0,
+          status, property_type || 'villa', description,
+          show_in_sales ? 1 : 0,
+          show_on_homepage ? 1 : 0,
+          show_in_premium === undefined ? null : (show_in_premium ? 1 : 0),
+          location_details || null, features || null, information || null,
+          title_en || null, location_en || null, description_en || null,
+          location_details_en || null, features_en || null, information_en || null,
+          floor || null, commission || null, extras || null,
+          id,
+        ],
+        (err2, result) => {
+          if (err2) return res.status(500).json({ success: false, message: 'Server Error' })
+          if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Property not found' })
+          res.json({ success: true, message: 'Property updated', slug })
+        }
+      )
+    })
+  })
+}
+
+// PATCH /properties/:id/homepage-order — position in the homepage showcase
+// (1 = first). 0 / empty clears the order.
+exports.updateHomepageOrder = (req, res) => {
+  const { id } = req.params
+  const order = parseInt(req.body.homepage_order, 10)
+  const value = Number.isFinite(order) && order > 0 ? order : 0
+  db.query('UPDATE properties SET homepage_order = ? WHERE id = ?', [value, id], (err, result) => {
     if (err) return res.status(500).json({ success: false, message: 'Server Error' })
-    db.query(
-      'UPDATE properties SET title=?, slug=?, location=?, price=?, size=?, plot_size=?, outdoor_area=?, rooms=?, bedrooms=?, bathrooms=?, status=?, property_type=?, description=?, show_in_sales=?, show_on_homepage=?, location_details=?, features=?, information=?, title_en=?, location_en=?, description_en=?, location_details_en=?, features_en=?, information_en=?, floor=?, commission=?, extras=? WHERE id=?',
-      [
-        title, slug, location, price,
-        size || 0,
-        plot_size || null,
-        outdoor_area || null,
-        rooms || 0, bedrooms || 0, bathrooms || 0,
-        status, property_type || 'villa', description,
-        show_in_sales ? 1 : 0,
-        show_on_homepage ? 1 : 0,
-        location_details || null, features || null, information || null,
-        title_en || null, location_en || null, description_en || null,
-        location_details_en || null, features_en || null, information_en || null,
-        floor || null, commission || null, extras || null,
-        id,
-      ],
-      (err2, result) => {
-        if (err2) return res.status(500).json({ success: false, message: 'Server Error' })
-        if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Property not found' })
-        res.json({ success: true, message: 'Property updated', slug })
-      }
-    )
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Property not found' })
+    res.json({ success: true, message: 'Homepage order updated', homepage_order: value })
+  })
+}
+
+// PATCH /properties/:id/premium — add to / remove from the
+// "More Premium Properties" slider without touching other fields.
+exports.updatePremium = (req, res) => {
+  const { id } = req.params
+  const value = req.body.show_in_premium ? 1 : 0
+  db.query('UPDATE properties SET show_in_premium = ? WHERE id = ?', [value, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server Error' })
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Property not found' })
+    res.json({ success: true, message: 'Premium updated', show_in_premium: value })
   })
 }
 

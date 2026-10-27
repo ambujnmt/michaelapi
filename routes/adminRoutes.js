@@ -6,7 +6,8 @@ const { login, updateProfile, updatePassword } = require('../controllers/authCon
 const {
   getAllProperties, getPropertyById, createProperty, updateProperty, deleteProperty,
   uploadBanner, getGalleryImages, uploadGalleryImages, deleteGalleryImage,
-  getApartmentImages, uploadApartmentImages, deleteApartmentImage
+  getApartmentImages, uploadApartmentImages, deleteApartmentImage,
+  updateHomepageOrder, updatePremium
 } = require('../controllers/propertyController')
 const {
   getAllInquiries, getInquiryById, updateInquiryStatus, deleteInquiry
@@ -79,6 +80,8 @@ router.get('/properties', getAllProperties)
 router.get('/properties/:id', getPropertyById)
 router.post('/properties', createProperty)
 router.put('/properties/:id', updateProperty)
+router.patch('/properties/:id/homepage-order', updateHomepageOrder)
+router.patch('/properties/:id/premium', updatePremium)
 router.delete('/properties/:id', deleteProperty)
 
 // --- Property Images ---

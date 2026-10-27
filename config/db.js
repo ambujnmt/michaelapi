@@ -82,6 +82,24 @@ pool.query('SELECT 1', (err) => {
 
   ensureColumn('properties', 'show_in_sales', `show_in_sales TINYINT(1) NOT NULL DEFAULT 0`)
   ensureColumn('properties', 'show_on_homepage', `show_on_homepage TINYINT(1) NOT NULL DEFAULT 0`)
+  ensureColumn('properties', 'show_in_premium', `show_in_premium TINYINT(1) NOT NULL DEFAULT 0`)
+  // show_in_premium first shipped with DEFAULT 1. Switch it to off-by-default
+  // once: only when the column still has the old default.
+  pool.query(
+    `SELECT COLUMN_DEFAULT FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'properties' AND COLUMN_NAME = 'show_in_premium'`,
+    [DB_NAME],
+    (err, rows) => {
+      if (err || !rows.length || String(rows[0].COLUMN_DEFAULT).replace(/'/g, '') !== '1') return
+      pool.query('ALTER TABLE properties ALTER COLUMN show_in_premium SET DEFAULT 0', (e) => {
+        if (e) return console.log('properties.show_in_premium default error:', e.message)
+        pool.query('UPDATE properties SET show_in_premium = 0')
+      })
+    }
+  )
+  // Position in the homepage showcase (1 = first). 0 = no order set => shown
+  // after the ordered ones, newest-first.
+  ensureColumn('properties', 'homepage_order', `homepage_order INT NOT NULL DEFAULT 0`)
   ensureColumn('properties', 'location_details', `location_details LONGTEXT`)
   ensureColumn('properties', 'features', `features LONGTEXT`)
   ensureColumn('properties', 'information', `information LONGTEXT`)
